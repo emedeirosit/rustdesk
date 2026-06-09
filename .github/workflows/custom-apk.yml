@@ -43,25 +43,26 @@ jobs:
           sed -i "s|bool checkUpdate = .*|bool checkUpdate = false;|" $CONF
           sed -i "s|bool stopUpgrade = .*|bool stopUpgrade = true;|" $CONF
 
-      - name: Install System Dependencies
+      - name: Install Essential Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-multilib cli-common libasound2-dev libpulse-dev \
-            libdbus-1-dev libcommon-sense-perl libglib2.0-dev libvpx-dev \
-            libx11-dev libxdotool-dev libxtst-dev libxcb-composite0-dev \
-            libxcb-shape0-dev libxcb-xfixes0-dev
+          # Instalamos apenas o essencial para compilação cruzada (cross-compilation)
+          sudo apt-get install -y g++-multilib cmake python3-pip
 
       - name: Build APK ARM64
         run: |
-          # Define variáveis críticas para o compilador Rust/Dart
+          # 1. Configura variáveis de ambiente
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           
-          # Entra na pasta e limpa antes de buildar
+          # 2. Prepara o Rust para Android
+          rustup target add aarch64-linux-android
+          
+          # 3. Entra na pasta e limpa dependências
           cd flutter
           flutter pub get
           
-          # O RustDesk precisa gerar as pontes (bridges) de comunicação
-          # Se o comando falhar, tente: flutter build apk --release --target-platform android-arm64
+          # 4. Executa o build focando APENAS em Android ARM64
+          # O parâmetro --no-pub evita que ele tente baixar coisas durante o build
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Upload APK
