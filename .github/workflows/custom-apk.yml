@@ -5,15 +5,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # Força o uso do Node 24 para evitar os avisos de depreciação
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
-          # Se a versão 1.4.7 for lançada, substitua 'master' pela tag '1.4.7'
-          ref: 'master' 
+          ref: '1.4.7' # Tag exata da versão que você quer
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c # Versão compatível com o build do RustDesk
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -21,12 +28,12 @@ jobs:
           channel: 'stable'
           flutter-version: '3.19.0'
 
-      - name: Setup Rust toolchain
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
-      - name: Inject Custom Server Configs
+      - name: Injetar Configurações (Secrets)
         run: |
           CONF="flutter/lib/common.dart"
           sed -i "s|const RENDEZVOUS_SERVER = .*|const RENDEZVOUS_SERVER = '${{ secrets.MY_ID_SERVER }}';|" $CONF
@@ -35,14 +42,15 @@ jobs:
           sed -i "s|bool checkUpdate = .*|bool checkUpdate = false;|" $CONF
           sed -i "s|bool stopUpgrade = .*|bool stopUpgrade = true;|" $CONF
 
-      - name: Install Dependencies & Build ARM64
+      - name: Build APK ARM64
         run: |
           cd flutter
           flutter pub get
-          # O comando abaixo gera especificamente o APK para AArch64 (ARM64)
+          # Definimos a variável do NDK para que o Rust a encontre
+          export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: RustDesk-1.4.7-ARM64-Custom
