@@ -35,10 +35,7 @@ jobs:
 
       - name: Setup Rust Android Environment
         run: |
-          # Install the Android target
-          rustup target add aarch64-linux-android
-    
-          # Configure cargo for Android NDK linking
+          # Configura o cargo para usar o linker correto do NDK Android
           mkdir -p ~/.cargo
           cat >> ~/.cargo/config.toml << EOF
           [target.aarch64-linux-android]
@@ -48,25 +45,21 @@ jobs:
 
       - name: Setup vcpkg e Dependências Nativa
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
+          git clone https://github.com
           ./vcpkg/bootstrap-vcpkg.sh
-          # Define o VCPKG_ROOT para o ambiente do GitHub
           echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
-          # Força o vcpkg a usar os binários baixados para o Android
           echo "VCPKG_FORCE_SYSTEM_BINARIES=1" >> $GITHUB_ENV
 
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y g++-multilib cmake python3-pip ninja-build
-          # Instala o plugin essencial e garante que ele esteja no PATH
           cargo install cargo-ndk
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Injetar Configurações
         run: |
           CONF="flutter/lib/common.dart"
-          # Usamos aspas simples para garantir que a string seja tratada corretamente pelo Dart
           sed -i "s|const RENDEZVOUS_SERVER = .*|const RENDEZVOUS_SERVER = '${{ secrets.MY_ID_SERVER }}';|" $CONF
           sed -i "s|const RELAY_SERVER = .*|const RELAY_SERVER = '${{ secrets.MY_RELAY_SERVER }}';|" $CONF
           sed -i "s|const RS_PUB_KEY = .*|const RS_PUB_KEY = '${{ secrets.MY_PUB_KEY }}';|" $CONF
@@ -78,11 +71,12 @@ jobs:
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           export VCPKG_ROOT=$VCPKG_ROOT
           export PATH=$PATH:$HOME/.cargo/bin
-    
+          
           cd flutter
           flutter pub get
           find . -name "gradlew" -exec chmod +x {} +
-    
+          
+          # Build focando apenas em ARM64
           flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK Customizado
