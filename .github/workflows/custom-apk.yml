@@ -33,12 +33,20 @@ jobs:
         with:
           targets: aarch64-linux-android
 
+      - name: Setup vcpkg (Necessário para o RustDesk)
+        run: |
+          # O RustDesk usa vcpkg para codecs de vídeo. Sem isso, o Cargo dá erro 101.
+          git clone https://github.com
+          ./vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y g++-multilib cmake python3-pip ninja-build
-          # Instala o cargo-ndk, essencial para o Gradle não dar erro 101
+          # Instala o plugin essencial e garante que ele esteja no PATH
           cargo install cargo-ndk
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Injetar Configurações
         run: |
@@ -52,16 +60,15 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # Define as variáveis de ambiente que o script de build do RustDesk espera
+          # Define variáveis que o build.gradle do RustDesk (linha 37) espera
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
+          export PATH=$PATH:$HOME/.cargo/bin
           
-          # Entra na pasta e prepara o ambiente
           cd flutter
           flutter pub get
           
-          # O build do RustDesk via Gradle chama o cargo internamente.
-          # Adicionamos --verbose para que, se falhar, possamos ver o erro real do Rust.
-          flutter build apk --release --target-platform android-arm64 --split-per-abi
+          # Rodamos o build com --verbose para capturar o erro exato do Rust se falhar
+          flutter build apk --release --target-platform android-arm64 --split-per-abi --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
