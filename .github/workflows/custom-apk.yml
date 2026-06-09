@@ -64,15 +64,19 @@ jobs:
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           export VCPKG_ROOT=$(pwd)/vcpkg
           
-          # 2. Entra na pasta flutter e prepara as dependências
+          # 2. Garante permissão de execução para scripts do RustDesk
+          chmod +x ./vcpkg/vcpkg
+          chmod +x ./flutter/android/gradlew
+          
+          # 3. Entra na pasta flutter e prepara as dependências
           # Isso gera os arquivos necessários do Android se eles não existirem
           cd flutter
           flutter pub get
           
-          # 3. Garante permissão de execução no gradlew (usando busca dinâmica)
+          # 4. Garante permissão de execução no gradlew (usando busca dinâmica)
           find . -name "gradlew" -exec chmod +x {} +
           
-          # 4. Executa o build
+          # 5. Executa o build
           flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK
