@@ -37,10 +37,10 @@ jobs:
         run: |
           git clone https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.sh
-          # Define o VCPKG_ROOT e o triplet do Android para o RustDesk
+          # Define o VCPKG_ROOT para o ambiente do GitHub
           echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
-          # O RustDesk para Android exige o triplet arm64-android
-          export VCPKG_FORCE_SYSTEM_BINARIES=1
+          # Força o vcpkg a usar os binários baixados para o Android
+          echo "VCPKG_FORCE_SYSTEM_BINARIES=1" >> $GITHUB_ENV
 
       - name: Install Build Dependencies
         run: |
@@ -62,22 +62,21 @@ jobs:
 
       - name: Build APK ARM64
         run: |
+          # 1. Re-exporta variáveis para este shell específico
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-          export VCPKG_ROOT=$(pwd)/vcpkg
+          export VCPKG_ROOT=$VCPKG_ROOT
           
-          # Garante permissões em toda a árvore de arquivos
-          find . -name "gradlew" -exec chmod +x {} +
-          chmod +x ./vcpkg/vcpkg
-          
+          # 2. Garante que o Gradle seja executável
           cd flutter
           flutter pub get
+          find . -name "gradlew" -exec chmod +x {} +
           
-          # Build final. O RustDesk compilará as pontes nativas agora.
+          # 3. Executa o build final
+          # Nota: O RustDesk compilará as "bridges" agora. Isso leva tempo.
           flutter build apk --release --target-platform android-arm64 --verbose
 
-      - name: Upload APK
+      - name: Upload APK Customizado
         uses: actions/upload-artifact@v4
         with:
-          name: RustDesk-Custom-ARM64
-          # O caminho do arquivo gerado pelo --split-per-abi
-          path: flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          name: RustDesk-Final-Installer
+          path: flutter/build/app/outputs/flutter-apk/app-release.apk
