@@ -33,6 +33,19 @@ jobs:
         with:
           targets: aarch64-linux-android
 
+      - name: Setup Rust Android Environment
+        run: |
+          # Install the Android target
+          rustup target add aarch64-linux-android
+    
+          # Configure cargo for Android NDK linking
+          mkdir -p ~/.cargo
+          cat >> ~/.cargo/config.toml << EOF
+          [target.aarch64-linux-android]
+          ar = "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar"
+          linker = "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+          EOF
+
       - name: Setup vcpkg e Dependências Nativa
         run: |
           git clone https://github.com/microsoft/vcpkg.git
@@ -62,17 +75,14 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # 1. Re-exporta variáveis para este shell específico
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           export VCPKG_ROOT=$VCPKG_ROOT
-          
-          # 2. Garante que o Gradle seja executável
+          export PATH=$PATH:$HOME/.cargo/bin
+    
           cd flutter
           flutter pub get
           find . -name "gradlew" -exec chmod +x {} +
-          
-          # 3. Executa o build final
-          # Nota: O RustDesk compilará as "bridges" agora. Isso leva tempo.
+    
           flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK Customizado
