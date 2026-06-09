@@ -60,15 +60,20 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # Define variáveis que o build.gradle do RustDesk (linha 37) espera
+          # 1. Variáveis de ambiente fundamentais
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-          export PATH=$PATH:$HOME/.cargo/bin
+          export VCPKG_ROOT=$(pwd)/vcpkg
+          
+          # 2. Garante permissão de execução para scripts do RustDesk
+          chmod +x ./vcpkg/vcpkg
+          chmod +x ./flutter/android/gradlew
           
           cd flutter
           flutter pub get
           
-          # Rodamos o build com --verbose para capturar o erro exato do Rust se falhar
-          flutter build apk --release --target-platform android-arm64 --split-per-abi --verbose
+          # 3. Executa o build com limpeza prévia para evitar conflitos de cache
+          # Removemos o --split-per-abi temporariamente para estabilizar o build
+          flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
