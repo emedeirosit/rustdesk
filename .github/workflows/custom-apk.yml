@@ -1,0 +1,51 @@
+name: Build Custom RustDesk APK
+on:
+  workflow_dispatch: # Permite que você inicie o build manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.19.0' # Versão recomendada para as builds atuais
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Inject Custom Server Configs
+        run: |
+          # Caminho do arquivo de configuração
+          CONF="flutter/lib/common.dart"
+          
+          # Injeta ID Server, Relay e Key
+          sed -i "s|const RENDEZVOUS_SERVER = .*|const RENDEZVOUS_SERVER = '${{ secrets.MY_ID_SERVER }}';|" $CONF
+          sed -i "s|const RELAY_SERVER = .*|const RELAY_SERVER = '${{ secrets.MY_RELAY_SERVER }}';|" $CONF
+          sed -i "s|const RS_PUB_KEY = .*|const RS_PUB_KEY = '${{ secrets.MY_PUB_KEY }}';|" $CONF
+          
+          # Desativa atualizações e verificação de versão
+          sed -i "s|bool checkUpdate = .*|bool checkUpdate = false;|" $CONF
+          sed -i "s|bool stopUpgrade = .*|bool stopUpgrade = true;|" $CONF
+          
+          echo "Configurações injetadas com sucesso em $CONF"
+
+      - name: Install Dependencies & Build
+        run: |
+          # Este passo pode variar dependendo da versão do RustDesk (vcpkg ou cargo)
+          # Para simplificar, usamos o comando padrão de build do Flutter
+          cd flutter
+          flutter pub get
+          flutter build apk --release --target-platform android-arm64
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RustDesk-Custom-Android
+          path: flutter/build/app/outputs/flutter-apk/app-release.apk
