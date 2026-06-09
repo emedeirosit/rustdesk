@@ -20,7 +20,7 @@ jobs:
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r25c # Versão estável para RustDesk
+          ndk-version: r25c
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -28,45 +28,44 @@ jobs:
           channel: 'stable'
           flutter-version: '3.24.0'
 
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-multilib cmake python3-pip ninja-build
+          # Instala o cargo-ndk, essencial para o Gradle não dar erro 101
+          cargo install cargo-ndk
+
       - name: Injetar Configurações
         run: |
           CONF="flutter/lib/common.dart"
+          # Usamos aspas simples para garantir que a string seja tratada corretamente pelo Dart
           sed -i "s|const RENDEZVOUS_SERVER = .*|const RENDEZVOUS_SERVER = '${{ secrets.MY_ID_SERVER }}';|" $CONF
           sed -i "s|const RELAY_SERVER = .*|const RELAY_SERVER = '${{ secrets.MY_RELAY_SERVER }}';|" $CONF
           sed -i "s|const RS_PUB_KEY = .*|const RS_PUB_KEY = '${{ secrets.MY_PUB_KEY }}';|" $CONF
           sed -i "s|bool checkUpdate = .*|bool checkUpdate = false;|" $CONF
           sed -i "s|bool stopUpgrade = .*|bool stopUpgrade = true;|" $CONF
 
-      - name: Install Essential Build Tools
-        run: |
-          sudo apt-get update
-          # Instalamos apenas o essencial para compilação cruzada (cross-compilation)
-          sudo apt-get install -y g++-multilib cmake python3-pip
-
       - name: Build APK ARM64
         run: |
-          # 1. Configura variáveis de ambiente
+          # Define as variáveis de ambiente que o script de build do RustDesk espera
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           
-          # 2. Prepara o Rust para Android
-          rustup target add aarch64-linux-android
-          
-          # 3. Entra na pasta e limpa dependências
+          # Entra na pasta e prepara o ambiente
           cd flutter
           flutter pub get
           
-          # 4. Executa o build focando APENAS em Android ARM64
-          # O parâmetro --no-pub evita que ele tente baixar coisas durante o build
+          # O build do RustDesk via Gradle chama o cargo internamente.
+          # Adicionamos --verbose para que, se falhar, possamos ver o erro real do Rust.
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: RustDesk-1.4.7-Custom
+          name: RustDesk-Custom-ARM64
+          # O caminho do arquivo gerado pelo --split-per-abi
           path: flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
