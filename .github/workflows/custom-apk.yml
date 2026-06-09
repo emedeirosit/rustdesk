@@ -43,12 +43,25 @@ jobs:
           sed -i "s|bool checkUpdate = .*|bool checkUpdate = false;|" $CONF
           sed -i "s|bool stopUpgrade = .*|bool stopUpgrade = true;|" $CONF
 
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-multilib cli-common libasound2-dev libpulse-dev \
+            libdbus-1-dev libcommon-sense-perl libglib2.0-dev libvpx-dev \
+            libx11-dev libxdotool-dev libxtst-dev libxcb-composite0-dev \
+            libxcb-shape0-dev libxcb-xfixes0-dev
+
       - name: Build APK ARM64
         run: |
+          # Define variáveis críticas para o compilador Rust/Dart
+          export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
+          
+          # Entra na pasta e limpa antes de buildar
           cd flutter
           flutter pub get
-          # Garante que o compilador Rust encontre o NDK
-          export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
+          
+          # O RustDesk precisa gerar as pontes (bridges) de comunicação
+          # Se o comando falhar, tente: flutter build apk --release --target-platform android-arm64
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Upload APK
