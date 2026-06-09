@@ -46,15 +46,6 @@ jobs:
           linker = "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
           EOF
 
-      - name: Prepare Rust Cargo Dependencies
-        run: |
-            cd flutter
-            # Ensure all Rust dependencies are resolved
-            cargo fetch --target aarch64-linux-android
-            cd ..
-            # Build any necessary Rust components
-            cargo build --target aarch64-linux-android --release 2>/dev/null || true
-
       - name: Setup vcpkg e Dependências Nativa
         run: |
           git clone https://github.com/microsoft/vcpkg.git
