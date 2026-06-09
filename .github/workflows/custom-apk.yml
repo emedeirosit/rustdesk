@@ -60,19 +60,19 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # 1. Variáveis de ambiente fundamentais
+          # 1. Variáveis de ambiente
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           export VCPKG_ROOT=$(pwd)/vcpkg
           
-          # 2. Garante permissão de execução para scripts do RustDesk
-          chmod +x ./vcpkg/vcpkg
-          chmod +x ./flutter/android/gradlew
-          
+          # 2. Entra na pasta flutter e prepara as dependências
+          # Isso gera os arquivos necessários do Android se eles não existirem
           cd flutter
           flutter pub get
           
-          # 3. Executa o build com limpeza prévia para evitar conflitos de cache
-          # Removemos o --split-per-abi temporariamente para estabilizar o build
+          # 3. Garante permissão de execução no gradlew (usando busca dinâmica)
+          find . -name "gradlew" -exec chmod +x {} +
+          
+          # 4. Executa o build
           flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK
