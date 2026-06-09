@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+        with:
+          ref: '1.2.7' # O RustDesk usa tags específicas. Se a 1.4.7 for a que você quer, verifique se a tag existe.
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -38,11 +40,9 @@ jobs:
 
       - name: Install Dependencies & Build
         run: |
-          # Este passo pode variar dependendo da versão do RustDesk (vcpkg ou cargo)
-          # Para simplificar, usamos o comando padrão de build do Flutter
           cd flutter
-          flutter pub get
-          flutter build apk --release --target-platform android-arm64
+          # Comando específico para build focado apenas em ARM64
+          flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
