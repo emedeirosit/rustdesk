@@ -66,7 +66,6 @@ jobs:
           
           # 2. Garante permissão de execução para scripts do RustDesk
           chmod +x ./vcpkg/vcpkg
-          chmod +x ./flutter/android/gradlew
           
           # 3. Entra na pasta flutter e prepara as dependências
           # Isso gera os arquivos necessários do Android se eles não existirem
