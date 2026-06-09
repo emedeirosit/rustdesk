@@ -33,12 +33,14 @@ jobs:
         with:
           targets: aarch64-linux-android
 
-      - name: Setup vcpkg (Necessário para o RustDesk)
+      - name: Setup vcpkg e Dependências Nativa
         run: |
-          # O RustDesk usa vcpkg para codecs de vídeo. Sem isso, o Cargo dá erro 101.
-          git clone https://github.com/microsoft/vcpkg.git
+          git clone https://github.com
           ./vcpkg/bootstrap-vcpkg.sh
+          # Define o VCPKG_ROOT e o triplet do Android para o RustDesk
           echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+          # O RustDesk para Android exige o triplet arm64-android
+          export VCPKG_FORCE_SYSTEM_BINARIES=1
 
       - name: Install Build Dependencies
         run: |
@@ -60,22 +62,17 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # 1. Variáveis de ambiente
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           export VCPKG_ROOT=$(pwd)/vcpkg
           
-          # 2. Garante permissão de execução para scripts do RustDesk
+          # Garante permissões em toda a árvore de arquivos
+          find . -name "gradlew" -exec chmod +x {} +
           chmod +x ./vcpkg/vcpkg
           
-          # 3. Entra na pasta flutter e prepara as dependências
-          # Isso gera os arquivos necessários do Android se eles não existirem
           cd flutter
           flutter pub get
           
-          # 4. Garante permissão de execução no gradlew (usando busca dinâmica)
-          find . -name "gradlew" -exec chmod +x {} +
-          
-          # 5. Executa o build
+          # Build final. O RustDesk compilará as pontes nativas agora.
           flutter build apk --release --target-platform android-arm64 --verbose
 
       - name: Upload APK
