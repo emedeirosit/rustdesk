@@ -35,7 +35,7 @@ jobs:
 
       - name: Setup vcpkg e Dependências Nativa
         run: |
-          git clone https://github.com
+          git clone https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.sh
           # Define o VCPKG_ROOT e o triplet do Android para o RustDesk
           echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
