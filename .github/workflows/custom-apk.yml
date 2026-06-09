@@ -33,12 +33,11 @@ jobs:
         with:
           targets: aarch64-linux-android
 
-      - name: Install Build Dependencies
+      - name: Install Rust-NDK and Tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y g++-multilib cmake python3-pip ninja-build
-          # Instala o cargo-ndk, essencial para o Gradle não dar erro 101
+          # Plugin essencial para o RustDesk compilar Rust no Android
           cargo install cargo-ndk
+          rustup target add aarch64-linux-android
 
       - name: Injetar Configurações
         run: |
@@ -52,15 +51,14 @@ jobs:
 
       - name: Build APK ARM64
         run: |
-          # Define as variáveis de ambiente que o script de build do RustDesk espera
+          # 1. Configura explicitamente o caminho do NDK para o Cargo
           export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
           
-          # Entra na pasta e prepara o ambiente
+          # 2. Prepara dependências do Flutter
           cd flutter
           flutter pub get
           
-          # O build do RustDesk via Gradle chama o cargo internamente.
-          # Adicionamos --verbose para que, se falhar, possamos ver o erro real do Rust.
+          # 3. Executa o build. O RustDesk chama o 'cargo ndk' internamente.
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Upload APK
