@@ -9,7 +9,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
-          ref: 'master'
+          ref: '1.4.7'
           submodules: recursive
           fetch-depth: 0
 
