@@ -57,7 +57,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y g++-multilib cmake python3-pip ninja-build
-          cargo install cargo-ndk
+          cargo install cargo-ndk --version 3.5.4 --locked
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Injetar Configurações
